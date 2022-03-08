@@ -19,6 +19,15 @@ newApplicationCommand.SetHandler(() =>
     {
         Directory.CreateDirectory(companyName);
     }
+    else
+    {
+        Console.WriteLine("You've applied here before:");
+        foreach (var dir in Directory.GetDirectories(companyName))
+        {
+            var info = Directory.GetCreationTime(dir);
+            Console.WriteLine($"{dir} on {info}");
+        }
+    }
     Console.WriteLine("Position:");
     var position = Console.ReadLine();
     var positionDir = Path.Combine(companyName, position);
