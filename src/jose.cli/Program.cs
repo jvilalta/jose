@@ -1,11 +1,35 @@
 ﻿using Scriban;
 using System.CommandLine;
+using System.Diagnostics;
 
 var rootCommand = new RootCommand();
 
 rootCommand.SetHandler(() =>
 {
     Console.WriteLine("Hello, World!");
+});
+var rejectionCommand = new Command("rejection");
+rejectionCommand.AddAlias("rej");
+rejectionCommand.SetHandler(() =>
+{
+    Console.WriteLine("Rejection");
+    Console.WriteLine("Company Name:");
+    var companyName = Console.ReadLine();
+    if (!Directory.Exists(companyName))
+    {
+        Console.WriteLine("Company Not Found");
+        return;
+    }
+    Console.WriteLine("Positions:");
+    var positions = Directory.GetDirectories(companyName);
+    int counter = 0;
+    foreach (var position in positions)
+    {
+        Console.WriteLine($"{counter}: {position}");
+        counter++;
+    }
+    var positionNumber = Console.ReadLine();
+    File.WriteAllText(Path.Join(positions[int.Parse(positionNumber)], "rejection.txt"), DateTime.UtcNow.ToFileTimeUtc().ToString());
 });
 var newCommand = new Command("new");
 var newApplicationCommand = new Command("application");
@@ -26,6 +50,7 @@ newApplicationCommand.SetHandler(() =>
         {
             var info = Directory.GetCreationTime(dir);
             Console.WriteLine($"{dir} on {info}");
+
         }
     }
     Console.WriteLine("Position:");
@@ -46,9 +71,28 @@ newApplicationCommand.SetHandler(() =>
         }
     }
     Directory.CreateDirectory(positionDir);
-    var coverLetterTemplate = Template.Parse(File.ReadAllText("base_cover_letter.txt"));
-    File.WriteAllText(Path.Join(positionDir, "cover_letter.txt"), coverLetterTemplate.Render(new { company = companyName, position = position }));
+    var coverLetterTemplate = Template.Parse(File.ReadAllText("base_cover_letter.html"));
+    File.WriteAllText("temp_cover_letter.html", coverLetterTemplate.Render(new { company = companyName, position = position }));
+    var processInfo = new ProcessStartInfo();
+    processInfo.UseShellExecute = false;
+    processInfo.WorkingDirectory = Directory.GetCurrentDirectory();
+    processInfo.FileName = "wsl.exe";
+    processInfo.ArgumentList.Add("wkhtmltopdf");
+    processInfo.ArgumentList.Add("-L");
+    processInfo.ArgumentList.Add("20mm");
+    processInfo.ArgumentList.Add("-T");
+    processInfo.ArgumentList.Add("20mm");
+    processInfo.ArgumentList.Add("-R");
+    processInfo.ArgumentList.Add("20mm");
+
+    processInfo.ArgumentList.Add("temp_cover_letter.html");
+    processInfo.ArgumentList.Add("temp_cover_letter.pdf");
+    var process = new Process();
+    process.StartInfo = processInfo;
+    process.Start();
+    process.WaitForExit();
     File.Copy("base_resume.pdf", Path.Join(positionDir, "Jay Vilalta.pdf"));
+    File.Copy("temp_cover_letter.pdf", Path.Join(positionDir, "Cover Letter.pdf"));
 
 });
 newCommand.AddCommand(newApplicationCommand);
@@ -59,4 +103,5 @@ newCommand.SetHandler(() =>
 });
 
 rootCommand.AddCommand(newCommand);
+rootCommand.AddCommand(rejectionCommand);
 rootCommand.Invoke(args);
