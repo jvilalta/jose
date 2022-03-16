@@ -25,8 +25,18 @@ rejectionCommand.SetHandler(() =>
     int counter = 0;
     foreach (var position in positions)
     {
+        var files = Directory.GetFiles(position);
+        if (files.Any(f=>f.EndsWith("rejection.txt")))
+        {
+            continue;
+        }
         Console.WriteLine($"{counter}: {position}");
         counter++;
+    }
+    if (counter==0)
+    {
+        Console.WriteLine("No positions found to reject.");
+        return;
     }
     var positionNumber = Console.ReadLine();
     File.WriteAllText(Path.Join(positions[int.Parse(positionNumber)], "rejection.txt"), DateTime.UtcNow.ToFileTimeUtc().ToString());
