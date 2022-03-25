@@ -26,14 +26,14 @@ rejectionCommand.SetHandler(() =>
     foreach (var position in positions)
     {
         var files = Directory.GetFiles(position);
-        if (files.Any(f=>f.EndsWith("rejection.txt")))
+        if (files.Any(f => f.EndsWith("rejection.txt")))
         {
             continue;
         }
         Console.WriteLine($"{counter}: {position}");
         counter++;
     }
-    if (counter==0)
+    if (counter == 0)
     {
         Console.WriteLine("No positions found to reject.");
         return;
@@ -41,9 +41,10 @@ rejectionCommand.SetHandler(() =>
     var positionNumber = Console.ReadLine();
     File.WriteAllText(Path.Join(positions[int.Parse(positionNumber)], "rejection.txt"), DateTime.UtcNow.ToFileTimeUtc().ToString());
 });
-var newCommand = new Command("new");
-var newApplicationCommand = new Command("application");
-newApplicationCommand.AddAlias("app");
+var applicationCommand = new Command("application");
+applicationCommand.AddAlias("app");
+var listApplicationCommand = new Command("list");
+var newApplicationCommand = new Command("new");
 newApplicationCommand.SetHandler(() =>
 {
     Console.WriteLine("new application");
@@ -105,13 +106,18 @@ newApplicationCommand.SetHandler(() =>
     File.Copy("temp_cover_letter.pdf", Path.Join(positionDir, "Cover Letter.pdf"));
 
 });
-newCommand.AddCommand(newApplicationCommand);
+applicationCommand.AddCommand(newApplicationCommand);
+applicationCommand.AddCommand(listApplicationCommand);
 
-newCommand.SetHandler(() =>
+applicationCommand.SetHandler(() =>
 {
     Console.WriteLine("new");
 });
 
-rootCommand.AddCommand(newCommand);
+listApplicationCommand.SetHandler(() =>
+{
+
+});
+rootCommand.AddCommand(applicationCommand);
 rootCommand.AddCommand(rejectionCommand);
 rootCommand.Invoke(args);
